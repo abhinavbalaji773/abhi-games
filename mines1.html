@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Abhi's Mines</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background-color: #2c2c2c;
+            color: white;
+            font-family: 'Poppins', sans-serif;
+            display: flex;
+            gap: 40px;
+            height: 100vh;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        .controls-panel {
+            width: 300px;
+            background-color: #333;
+            padding: 20px;
+            border-radius: 15px;
+            border: 1px solid #444;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            height: fit-content;
+            order: 1;
+        }
+
+        .game-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            order: 2;
+            max-height: 100vh;
+            justify-content: center;
+        }
+
+        h1 {
+            color: #ffffff;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+            margin-bottom: 20px;
+            font-weight: 600;
+            font-size: 2em;
+        }
+
+        .game-container {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 8px;
+            max-width: 550px;
+            margin: 0 auto;
+        }
+
+        .box {
+            width: 90px;
+            height: 90px;
+            background-color: #3a3a3a;
+            border: 2px solid #444;
+            border-radius: 10px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 36px;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .box:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.1);
+        }
+
+        .box.revealed {
+            background-color: #2a2a2a;
+            border-color: #666;
+        }
+
+        .box.diamond {
+            background-color: #1a1a1a;
+            border-color: #00ff00;
+            box-shadow: 0 0 10px rgba(0, 255, 0, 0.3);
+            animation: diamondReveal 0.5s ease;
+        }
+
+        .box.bomb {
+            background-color: #1a1a1a;
+            border-color: #ff0000;
+            box-shadow: 0 0 10px rgba(255, 0, 0, 0.3);
+            animation: bombReveal 0.5s ease;
+        }
+
+        .box.reveal-all {
+            animation: revealAll 0.5s ease;
+        }
+
+        @keyframes diamondReveal {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+
+        @keyframes bombReveal {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.2) rotate(180deg); }
+            100% { transform: scale(1); }
+        }
+
+        @keyframes revealAll {
+            0% { transform: scale(1); opacity: 0; }
+            50% { transform: scale(1.1); opacity: 0.5; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .message {
+            margin-top: 15px;
+            font-size: 20px;
+            text-align: center;
+            min-height: 30px;
+            font-weight: 500;
+        }
+
+        .win {
+            color: #00ff00;
+            text-shadow: 0 0 10px rgba(0, 255, 0, 0.3);
+        }
+
+        .lose {
+            color: #ff0000;
+            text-shadow: 0 0 10px rgba(255, 0, 0, 0.3);
+        }
+
+        .score {
+            font-size: 18px;
+            margin-bottom: 15px;
+            color: #ffffff;
+            font-weight: 500;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .total-diamonds {
+            font-size: 16px;
+            color: #ffd700;
+            text-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+        }
+
+        .home-btn {
+            position: fixed;
+            top: 15px;
+            left: 15px;
+            padding: 8px 16px;
+            font-size: 14px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: 'Poppins', sans-serif;
+            font-weight: 500;
+            z-index: 1000;
+        }
+
+        .home-btn:hover {
+            background-color: #45a049;
+            transform: scale(1.05);
+        }
+
+        .popup {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0.7);
+            background-color: #333;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            text-align: center;
+            border: 2px solid #444;
+            opacity: 0;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            width: 300px;
+        }
+
+        .popup.show {
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1);
+        }
+
+        .popup-content {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            position: relative;
+        }
+
+        .popup-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #ffffff;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
+        }
+
+        .popup-diamonds {
+            font-size: 40px;
+            color: #00ff00;
+            text-shadow: 0 0 15px rgba(0, 255, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            animation: diamondPulse 2s infinite;
+        }
+
+        @keyframes diamondPulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        .popup-message {
+            font-size: 16px;
+            color: #ffffff;
+            margin-bottom: 15px;
+            line-height: 1.4;
+            opacity: 0.9;
+        }
+
+        .popup-btn {
+            padding: 10px 20px;
+            font-size: 16px;
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: 'Poppins', sans-serif;
+            font-weight: 500;
+            width: 100%;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+        }
+
+        .popup-btn:hover {
+            background: linear-gradient(45deg, #45a049, #4CAF50);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(76, 175, 80, 0.4);
+        }
+
+        .popup-btn:active {
+            transform: translateY(1px);
+        }
+
+        .overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            z-index: 999;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .overlay.show {
+            opacity: 1;
+        }
+
+        .close-popup {
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            width: 25px;
+            height: 25px;
+            background-color: #ff4444;
+            border: none;
+            border-radius: 50%;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 10px rgba(255, 68, 68, 0.3);
+        }
+
+        .close-popup:hover {
+            transform: scale(1.1) rotate(90deg);
+            background-color: #ff0000;
+        }
+
+        .cashout-btn {
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #ff9800;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: 'Poppins', sans-serif;
+            font-weight: 500;
+            width: 100%;
+        }
+
+        .cashout-btn:hover {
+            background-color: #f57c00;
+            transform: scale(1.05);
+        }
+
+        .cashout-btn:disabled {
+            background-color: #666;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .controls-title {
+            color: #ffffff;
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        .number-input-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background-color: #2a2a2a;
+            padding: 8px;
+            border-radius: 8px;
+            border: 1px solid #444;
+        }
+
+        .number-input {
+            width: 70px;
+            height: 35px;
+            background-color: #333;
+            border: 1px solid #444;
+            border-radius: 5px;
+            color: #ffffff;
+            text-align: center;
+            font-size: 16px;
+            outline: none;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .number-input::-webkit-inner-spin-button,
+        .number-input::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        .number-btn {
+            width: 35px;
+            height: 35px;
+            background-color: #444;
+            border: none;
+            border-radius: 5px;
+            color: #ffffff;
+            font-size: 18px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .game-btn, .cashout-btn {
+            padding: 10px 20px;
+            font-size: 16px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: 'Poppins', sans-serif;
+            font-weight: 500;
+            width: 100%;
+        }
+
+        .button-container {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .tutorial-steps {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin: 15px 0;
+        }
+
+        .tutorial-step {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background-color: #2a2a2a;
+            padding: 8px 12px;
+            border-radius: 8px;
+            border: 1px solid #444;
+        }
+
+        .step-number {
+            width: 24px;
+            height: 24px;
+            background-color: #4CAF50;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .tutorial-step p {
+            margin: 0;
+            font-size: 14px;
+            color: #ffffff;
+            opacity: 0.9;
+        }
+
+        #tutorialPopup {
+            width: 320px;
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0.7);
+            background-color: #333;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+            z-index: 1001;
+            text-align: center;
+            border: 2px solid #444;
+            opacity: 0;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        #tutorialPopup.show {
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1);
+        }
+
+        #tutorialOverlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        #tutorialOverlay.show {
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+    <button class="home-btn" onclick="window.location.href='index.html'">Home</button>
+    <div class="controls-panel">
+        <h2 class="controls-title">Game Controls</h2>
+        <div class="settings-container">
+            <div class="number-input-container">
+                <span class="bomb-label">Bombs:</span>
+                <button class="number-btn" onclick="adjustBombs(-1)">-</button>
+                <input type="number" id="bombInput" class="number-input" min="1" max="24" value="5" onchange="validateBombInput(this)">
+                <button class="number-btn" onclick="adjustBombs(1)">+</button>
+            </div>
+        </div>
+        <div class="button-container">
+            <button class="game-btn restart" onclick="startGame()">Start</button>
+            <button class="cashout-btn" onclick="cashout()" disabled>Cashout</button>
+        </div>
+    </div>
+
+    <div class="game-panel">
+        <h1>Abhi's Mines</h1>
+        <div class="score">
+            <div>Diamonds Found: <span id="diamondCount">0</span>/<span id="maxDiamonds">20</span></div>
+            <div class="total-diamonds">Total Diamonds: <span id="totalDiamonds">0</span></div>
+        </div>
+        <div class="game-container" id="gameContainer"></div>
+        <div class="message" id="message"></div>
+    </div>
+
+    <div class="overlay" id="overlay"></div>
+    <div class="popup" id="popup">
+        <div class="popup-content">
+            <button class="close-popup" onclick="closePopup()">×</button>
+            <h2 class="popup-title">Cashout Successful!</h2>
+            <div class="popup-diamonds">💎 <span id="popupDiamondCount">0</span></div>
+            <p class="popup-message">Congratulations! You've successfully collected your diamonds!<br>Want to try your luck again?</p>
+            <button class="popup-btn" onclick="closePopup()">Play Again</button>
+        </div>
+    </div>
+
+    <div class="overlay" id="tutorialOverlay"></div>
+    <div class="popup" id="tutorialPopup">
+        <div class="popup-content">
+            <button class="close-popup" onclick="closeTutorial()">×</button>
+            <h2 class="popup-title">How to Play</h2>
+            <div class="tutorial-steps">
+                <div class="tutorial-step">
+                    <span class="step-number">1</span>
+                    <p>Choose number of bombs (1-24)</p>
+                </div>
+                <div class="tutorial-step">
+                    <span class="step-number">2</span>
+                    <p>Click Start to begin</p>
+                </div>
+                <div class="tutorial-step">
+                    <span class="step-number">3</span>
+                    <p>Click boxes to find diamonds 💎</p>
+                </div>
+                <div class="tutorial-step">
+                    <span class="step-number">4</span>
+                    <p>Avoid bombs 💣</p>
+                </div>
+                <div class="tutorial-step">
+                    <span class="step-number">5</span>
+                    <p>Cashout anytime to collect diamonds!</p>
+                </div>
+            </div>
+            <button class="popup-btn" onclick="closeTutorial()">Got it!</button>
+        </div>
+    </div>
+
+    <script>
+        let boxes = [];
+        let gameActive = false;
+        let diamondsFound = 0;
+        let currentBombs = 5;
+
+        // Initialize bomb input
+        const bombInput = document.getElementById('bombInput');
+        const maxDiamonds = document.getElementById('maxDiamonds');
+        const startButton = document.querySelector('.game-btn.restart');
+        const cashoutButton = document.querySelector('.cashout-btn');
+        const popup = document.getElementById('popup');
+        const overlay = document.getElementById('overlay');
+        const popupDiamondCount = document.getElementById('popupDiamondCount');
+        const tutorialPopup = document.getElementById('tutorialPopup');
+        const tutorialOverlay = document.getElementById('tutorialOverlay');
+
+        function showPopup(diamonds) {
+            popupDiamondCount.textContent = diamonds;
+            popup.style.display = 'block';
+            overlay.style.display = 'block';
+            // Trigger animations
+            setTimeout(() => {
+                popup.classList.add('show');
+                overlay.classList.add('show');
+            }, 10);
+        }
+
+        function closePopup() {
+            popup.classList.remove('show');
+            overlay.classList.remove('show');
+            setTimeout(() => {
+                popup.style.display = 'none';
+                overlay.style.display = 'none';
+                startButton.textContent = 'Start';
+                gameActive = false;
+            }, 300);
+        }
+
+        function cashout() {
+            if (gameActive && diamondsFound > 0) {
+                showPopup(diamondsFound);
+                // Save diamonds to localStorage
+                let totalDiamonds = parseInt(localStorage.getItem('totalDiamonds') || '0');
+                totalDiamonds += diamondsFound;
+                localStorage.setItem('totalDiamonds', totalDiamonds);
+                document.getElementById('totalDiamonds').textContent = totalDiamonds;
+                
+                diamondsFound = 0;
+                document.getElementById('diamondCount').textContent = '0';
+                document.getElementById('message').textContent = 'Game ended!';
+                document.getElementById('message').className = 'message';
+                cashoutButton.disabled = true;
+            }
+        }
+
+        function validateBombInput(input) {
+            let value = parseInt(input.value);
+            if (isNaN(value) || value < 1) value = 1;
+            if (value > 24) value = 24;
+            input.value = value;
+            currentBombs = value;
+            maxDiamonds.textContent = 25 - currentBombs;
+        }
+
+        function adjustBombs(change) {
+            let newValue = parseInt(bombInput.value) + change;
+            if (newValue < 1) newValue = 1;
+            if (newValue > 24) newValue = 24;
+            bombInput.value = newValue;
+            currentBombs = newValue;
+            maxDiamonds.textContent = 25 - currentBombs;
+        }
+
+        function initializeGame() {
+            const container = document.getElementById('gameContainer');
+            container.innerHTML = '';
+            boxes = [];
+            diamondsFound = 0;
+            document.getElementById('message').textContent = '';
+            document.getElementById('message').className = 'message';
+            document.getElementById('diamondCount').textContent = '0';
+            cashoutButton.disabled = true;
+
+            // Create 25 boxes
+            for (let i = 0; i < 25; i++) {
+                const box = document.createElement('div');
+                box.className = 'box';
+                box.dataset.index = i;
+                box.onclick = () => revealBox(i);
+                container.appendChild(box);
+                boxes.push(box);
+            }
+
+            // Randomly place bombs based on current selection
+            const bombPositions = new Set();
+            while (bombPositions.size < currentBombs) {
+                bombPositions.add(Math.floor(Math.random() * 25));
+            }
+
+            // Store bomb positions in data attributes
+            bombPositions.forEach(pos => {
+                boxes[pos].dataset.hasBomb = 'true';
+            });
+        }
+
+        function startGame() {
+            if (!gameActive) {
+                gameActive = true;
+                initializeGame();
+                document.getElementById('message').textContent = 'Game Started! Find the diamonds!';
+                document.getElementById('message').className = 'message';
+                startButton.textContent = 'Start';
+                cashoutButton.disabled = false;
+            }
+        }
+
+        const diamondIcon = '💎';
+        const bombIcon = '💣';
+
+        function revealBox(index) {
+            if (!gameActive) {
+                document.getElementById('message').textContent = 'Press Start to begin the game!';
+                document.getElementById('message').className = 'message';
+                return;
+            }
+
+            const box = boxes[index];
+            if (box.classList.contains('revealed')) return;
+
+            box.classList.add('revealed');
+            
+            if (box.dataset.hasBomb === 'true') {
+                box.classList.add('bomb');
+                box.textContent = bombIcon;
+                gameActive = false;
+                document.getElementById('message').textContent = 'Game Over! You hit a bomb!';
+                document.getElementById('message').className = 'message lose';
+                startButton.textContent = 'Restart';
+                cashoutButton.disabled = true;
+                setTimeout(() => revealAllBoxes(), 1000);
+            } else {
+                box.classList.add('diamond');
+                box.textContent = diamondIcon;
+                diamondsFound++;
+                document.getElementById('diamondCount').textContent = diamondsFound;
+                
+                if (diamondsFound === (25 - currentBombs)) {
+                    gameActive = false;
+                    document.getElementById('message').textContent = 'Congratulations! You found all diamonds!';
+                    document.getElementById('message').className = 'message win';
+                    startButton.textContent = 'Restart';
+                    cashoutButton.disabled = true;
+                    setTimeout(() => revealAllBoxes(), 1000);
+                } else {
+                    document.getElementById('message').textContent = 'Great! Keep going!';
+                    document.getElementById('message').className = 'message';
+                }
+            }
+        }
+
+        function revealAllBoxes() {
+            boxes.forEach((box, index) => {
+                if (!box.classList.contains('revealed')) {
+                    setTimeout(() => {
+                        box.classList.add('revealed', 'reveal-all');
+                        if (box.dataset.hasBomb === 'true') {
+                            box.classList.add('bomb');
+                            box.textContent = bombIcon;
+                        } else {
+                            box.classList.add('diamond');
+                            box.textContent = diamondIcon;
+                        }
+                    }, index * 100);
+                }
+            });
+        }
+
+        function showTutorial() {
+            tutorialPopup.style.display = 'block';
+            tutorialOverlay.style.display = 'block';
+            setTimeout(() => {
+                tutorialPopup.classList.add('show');
+                tutorialOverlay.classList.add('show');
+            }, 10);
+        }
+
+        function closeTutorial() {
+            tutorialPopup.classList.remove('show');
+            tutorialOverlay.classList.remove('show');
+            setTimeout(() => {
+                tutorialPopup.style.display = 'none';
+                tutorialOverlay.style.display = 'none';
+            }, 300);
+        }
+
+        // Initialize total diamonds display
+        document.addEventListener('DOMContentLoaded', function() {
+            const totalDiamonds = parseInt(localStorage.getItem('totalDiamonds') || '0');
+            document.getElementById('totalDiamonds').textContent = totalDiamonds;
+            setTimeout(showTutorial, 500);
+        });
+
+        // Initialize the game board but don't start the game
+        initializeGame();
+    </script>
+</body>
+</html> 
